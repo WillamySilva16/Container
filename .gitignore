@@ -1,0 +1,18 @@
+# Credenciais — NUNCA versionar
+envs/
+*.env
+credentials.json
+*.json
+
+# Backups do script de migração
+*.bak
+
+# Logs
+*.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
