@@ -1,156 +1,111 @@
-# 🐳 APIs Docker — BD → Google Sheets
+# APIs Docker - BD para Google Sheets
 
-## Estrutura do projeto
+Projeto com varios jobs Python que leem dados dos bancos HCM/HK e atualizam abas no Google Sheets.
 
-```
-projeto/
-├── Dockerfile                  # Imagem base Python compartilhada
-├── docker-compose.yml          # Todos os serviços + Ofelia
-├── ofelia.ini                  # Documentação dos agendamentos
-├── requirements.txt            # Dependências Python
-├── .gitignore                  # Protege credenciais
-│
-├── credentials.json            # ⚠️ Service Account GCP única (NÃO versionar)
-│
-├── envs/
-│   ├── hcm.env                 # Credenciais BD VETORH
-│   └── hk.env                  # Credenciais BD SAR2G_RS_PRD
-│
-├── shared/
-│   └── monitor.py              # Módulo compartilhado por todas as APIs
-│
-├── admissao_hcm/
-│   └── admissaocm.py
-├── admissao_hk/
-│   └── admissao_HK.py
-├── colaboradores_hk/
-│   └── colaboradores.py
-├── beneficios/
-│   └── beneficios.py
-├── turnover/
-│   └── turnover.py
-├── juridico/
-│   └── juridico.py
-├── sesmt/
-│   └── sesmt.py
-├── faltas_tt/
-│   └── faltastt.py
-├── excedente/
-│   └── excedente.py
-├── descobertos/
-│   └── descobertos.py
-├── sobra/
-│   └── sobra.py
-├── treinamento/
-│   └── treinamento.py
-├── exportar_folha_hcm/
-│   └── exportar_folha_hcm.py
-└── exportar_faltas_hk/
-    └── exportar_faltas_hk.py
-```
+## Como ficou o Docker
 
----
+O `docker-compose.yml` foi configurado para subir os containers dos jobs sem executar os scripts automaticamente.
 
-## Pré-requisitos
-
-- Docker Desktop instalado na VM
-- `credentials.json` na raiz (service account única com acesso a todas as planilhas)
-- `envs/hcm.env` e `envs/hk.env` preenchidos
-
----
-
-## Setup inicial — Service Account GCP
-
-1. No GCP, crie uma nova service account (ex: `apis-docker`)
-2. Dê permissão de **Editor** no projeto
-3. Gere e baixe a chave `.json`
-4. Renomeie para `credentials.json` e coloque na raiz do projeto
-5. Em cada planilha do Google Sheets → **Compartilhar** → cole o e-mail da service account
-
----
-
-## Como subir tudo
+Por padrao, cada container fica ocioso com:
 
 ```bash
-# 1. Build das imagens (primeira vez ou após mudar requirements.txt)
+tail -f /dev/null
+```
+
+Isso evita que todos os jobs batam no banco e no Google Sheets ao mesmo tempo quando voce roda `docker compose up -d`.
+
+## Pre-requisitos
+
+- Docker Desktop instalado
+- `credentials.json` na raiz do projeto
+- `envs/hcm.env` preenchido
+- `envs/hk.env` preenchido
+
+Os arquivos de credenciais ficam fora da imagem por causa do `.dockerignore` e sao montados no container via volume.
+
+## Subir os containers sem rodar jobs
+
+```bash
 docker compose build
-
-# 2. Subir todos os serviços em background
 docker compose up -d
-
-# 3. Verificar se está tudo rodando
 docker compose ps
 ```
 
----
+Nesse modo, nenhum `main.py` roda automaticamente.
 
-## Comandos úteis
+## Rodar um job manualmente
+
+Use `docker compose exec <servico> python main.py`.
+
+Exemplos:
 
 ```bash
-# Ver logs de um serviço específico
-docker compose logs -f admissao_hk
+docker compose exec treinamento python main.py
+docker compose exec admissao_hk python main.py
+docker compose exec folha_hcm python main.py
+```
 
-# Ver logs do Ofelia (agendador)
+## Ativar os agendamentos
+
+O Ofelia fica em um profile separado chamado `scheduler`.
+
+Para ativar:
+
+```bash
+docker compose --profile scheduler up -d
 docker compose logs -f ofelia
+```
+
+Para desligar o agendador sem derrubar os jobs:
+
+```bash
+docker compose stop ofelia
+```
+
+## Servicos configurados
+
+HCM:
+
+- `admissao_hcm`
+- `exportar_folha_hcm`
+- `folha_hcm`
+- `reembolso_hcm`
+- `sesmt_hcm`
+
+HK:
+
+- `admissao_hk`
+- `colaboradores_hk`
+- `beneficios`
+- `turnover_hk`
+- `juridico`
+- `sesmt_hk`
+- `faltas_tt`
+- `excedente`
+- `descobertos`
+- `sobra`
+- `treinamento`
+- `exportar_faltas_hk`
+- `turnover`
+
+## Comandos uteis
+
+```bash
+# Ver logs de um container
+docker compose logs -f treinamento
+
+# Reiniciar um container sem rodar o job
+docker compose restart treinamento
 
 # Parar tudo
 docker compose down
 
-# Reiniciar um serviço específico
-docker compose restart admissao_hk
-
-# Rodar um job manualmente (sem esperar o schedule)
-docker compose exec admissao_hk python admissao_HK.py
+# Validar o compose
+docker compose config --services
 ```
 
----
+## Seguranca
 
-## Agendamentos configurados
-
-| Serviço              | Intervalo  | BD   |
-|----------------------|------------|------|
-| admissao_hcm         | 30 min     | HCM  |
-| exportar_folha_hcm   | 5 min      | HCM  |
-| admissao_hk          | 30 min     | HK   |
-| colaboradores_hk     | 30 min     | HK   |
-| exportar_faltas_hk   | 10 min     | HK   |
-| faltas_tt            | 30 min     | HK   |
-| descobertos          | 30 min     | HK   |
-| beneficios           | 1 hora     | HK   |
-| turnover             | 1 hora     | HK   |
-| juridico_hk          | 1 hora     | HK   |
-| sesmt                | 1 hora     | HK   |
-| excedente            | 1 hora     | HK   |
-| sobra                | 1 hora     | HK   |
-| treinamento          | 1 hora     | HK   |
-
----
-
-## Ajuste nos scripts Python
-
-Após mover os arquivos pro Docker, o import do `monitor.py` muda de:
-
-```python
-# ANTES (caminho relativo no Windows)
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
-from monitor import run_with_monitor
-
-# DEPOIS (sem sys.path.append — PYTHONPATH já aponta pra /shared)
-from monitor import run_with_monitor
-```
-
-Também o `SERVICE_ACCOUNT_FILE` muda de:
-```python
-# ANTES
-SERVICE_ACCOUNT_FILE = "monitoramento-api-admissao.json"
-
-# DEPOIS
-SERVICE_ACCOUNT_FILE = "/app/credentials.json"
-```
-
----
-
-## ⚠️ Segurança
-
-- `envs/` e `credentials.json` estão no `.gitignore`
-- **Nunca** commite credenciais no repositório
+- Nao commite `credentials.json`.
+- Nao commite arquivos dentro de `envs/`.
+- Evite publicar saida completa de `docker compose config`, porque ela pode expandir variaveis do `env_file`.

@@ -1,0 +1,12 @@
+.git
+__pycache__/
+*.py[cod]
+*.log
+.env
+envs/
+credentials.json
+README.md
+ofelia.ini
+docker-compose.yml
+migrar_scripts.py
+teste.py

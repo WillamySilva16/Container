@@ -1,343 +1,261 @@
-version: "3.9"
+x-job-base: &job-base
+  build: .
+  restart: unless-stopped
+  command: ["tail", "-f", "/dev/null"]
+  volumes:
+    - ./shared:/shared:ro
+    - ./credentials.json:/app/credentials.json:ro
+  environment:
+    GOOGLE_APPLICATION_CREDENTIALS: /app/credentials.json
+  labels:
+    ofelia.enabled: "true"
+
+x-hcm-env: &hcm-env
+  env_file: ./envs/hcm.env
+
+x-hk-env: &hk-env
+  env_file: ./envs/hk.env
 
 services:
-
-  # ──────────────────────────────
-  # OFELIA — Scheduler de jobs
-  # ──────────────────────────────
   ofelia:
     image: mcuadros/ofelia:latest
     container_name: ofelia
     restart: unless-stopped
+    profiles: ["scheduler"]
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./ofelia.ini:/etc/ofelia/config.ini
+      - ./ofelia.ini:/etc/ofelia/config.ini:ro
 
-  # ──────────────────────────────
-  # GRUPO HCM
-  # ──────────────────────────────
-  # admissao_hcm:
-  #   build: .
-  #   container_name: admissao_hcm
-  #   restart: unless-stopped
-  #   command: bash -c "sleep 0 && python main.py"
-  #   env_file: ./envs/hcm.env
-  #   volumes:
-  #     - ./admissao_hcm:/app
-  #     - ./shared:/shared:ro
-  #     - ./credentials.json:/app/credentials.json:ro
-  #   environment:
-  #     GOOGLE_APPLICATION_CREDENTIALS: /app/credentials.json
-  #   labels:
-  #     ofelia.enabled: "true"
-  #     ofelia.job-exec.admissao_hcm.schedule: "@every 30m"
-  #     ofelia.job-exec.admissao_hcm.command: "python main.py"
+  admissao_hcm:
+    <<: [*job-base, *hcm-env]
+    container_name: admissao_hcm
+    working_dir: /app
+    volumes:
+      - ./admissao_hcm:/app
+      - ./shared:/shared:ro
+      - ./credentials.json:/app/credentials.json:ro
+    labels:
+      ofelia.enabled: "true"
+      ofelia.job-exec.admissao_hcm.schedule: "@every 30m"
+      ofelia.job-exec.admissao_hcm.command: "python main.py"
 
-  # exportar_folha_hcm:
-  #   build: .
-  #   container_name: exportar_folha_hcm
-  #   restart: unless-stopped
-  #   command: bash -c "sleep 30 && python main.py"
-  #   env_file: ./envs/hcm.env
-  #   volumes:
-  #     - ./exportar_folha_hcm:/app
-  #     - ./shared:/shared:ro
-  #     - ./credentials.json:/app/credentials.json:ro
-  #   environment:
-  #     GOOGLE_APPLICATION_CREDENTIALS: /app/credentials.json
-  #   labels:
-  #     ofelia.enabled: "true"
-  #     ofelia.job-exec.exportar_folha_hcm.schedule: "@every 5m"
-  #     ofelia.job-exec.exportar_folha_hcm.command: "python main.py"
+  exportar_folha_hcm:
+    <<: [*job-base, *hcm-env]
+    container_name: exportar_folha_hcm
+    working_dir: /app
+    volumes:
+      - ./exportar_folha_hcm:/app
+      - ./shared:/shared:ro
+      - ./credentials.json:/app/credentials.json:ro
+    labels:
+      ofelia.enabled: "true"
+      ofelia.job-exec.exportar_folha_hcm.schedule: "@every 5m"
+      ofelia.job-exec.exportar_folha_hcm.command: "python main.py"
 
-  # folha_hcm:
-  #   build: .
-  #   container_name: folha_hcm
-  #   restart: unless-stopped
-  #   command: bash -c "sleep 60 && python main.py"
-  #   env_file: ./envs/hcm.env
-  #   volumes:
-  #     - ./folha_hcm:/app
-  #     - ./shared:/shared:ro
-  #     - ./credentials.json:/app/credentials.json:ro
-  #   environment:
-  #     GOOGLE_APPLICATION_CREDENTIALS: /app/credentials.json
-  #   labels:
-  #     ofelia.enabled: "true"
-  #     ofelia.job-exec.folha_hcm.schedule: "@every 1h"
-  #     ofelia.job-exec.folha_hcm.command: "python main.py"
+  folha_hcm:
+    <<: [*job-base, *hcm-env]
+    container_name: folha_hcm
+    working_dir: /app
+    volumes:
+      - ./folha_hcm:/app
+      - ./shared:/shared:ro
+      - ./credentials.json:/app/credentials.json:ro
+    labels:
+      ofelia.enabled: "true"
+      ofelia.job-exec.folha_hcm.schedule: "@every 1h"
+      ofelia.job-exec.folha_hcm.command: "python main.py"
 
-  # reembolso_hcm:
-  #   build: .
-  #   container_name: reembolso_hcm
-  #   restart: unless-stopped
-  #   command: bash -c "sleep 90 && python main.py"
-  #   env_file: ./envs/hcm.env
-  #   volumes:
-  #     - ./reembolso_hcm:/app
-  #     - ./shared:/shared:ro
-  #     - ./credentials.json:/app/credentials.json:ro
-  #   environment:
-  #     GOOGLE_APPLICATION_CREDENTIALS: /app/credentials.json
-  #   labels:
-  #     ofelia.enabled: "true"
-  #     ofelia.job-exec.reembolso_hcm.schedule: "@every 1h"
-  #     ofelia.job-exec.reembolso_hcm.command: "python main.py"
+  reembolso_hcm:
+    <<: [*job-base, *hcm-env]
+    container_name: reembolso_hcm
+    working_dir: /app
+    volumes:
+      - ./reembolso_hcm:/app
+      - ./shared:/shared:ro
+      - ./credentials.json:/app/credentials.json:ro
+    labels:
+      ofelia.enabled: "true"
+      ofelia.job-exec.reembolso_hcm.schedule: "@every 1h"
+      ofelia.job-exec.reembolso_hcm.command: "python main.py"
 
-  # sesmt_hcm:
-  #   build: .
-  #   container_name: sesmt_hcm
-  #   restart: unless-stopped
-  #   command: bash -c "sleep 120 && python main.py"
-  #   env_file: ./envs/hcm.env
-  #   volumes:
-  #     - ./sesmt_hcm:/app
-  #     - ./shared:/shared:ro
-  #     - ./credentials.json:/app/credentials.json:ro
-  #   environment:
-  #     GOOGLE_APPLICATION_CREDENTIALS: /app/credentials.json
-  #   labels:
-  #     ofelia.enabled: "true"
-  #     ofelia.job-exec.sesmt_hcm.schedule: "@every 1h"
-  #     ofelia.job-exec.sesmt_hcm.command: "python main.py"
+  sesmt_hcm:
+    <<: [*job-base, *hcm-env]
+    container_name: sesmt_hcm
+    working_dir: /app
+    volumes:
+      - ./sesmt_hcm:/app
+      - ./shared:/shared:ro
+      - ./credentials.json:/app/credentials.json:ro
+    labels:
+      ofelia.enabled: "true"
+      ofelia.job-exec.sesmt_hcm.schedule: "@every 1h"
+      ofelia.job-exec.sesmt_hcm.command: "python main.py"
 
-  # # ──────────────────────────────
-  # # GRUPO HK
-  # # ──────────────────────────────
-  # admissao_hk:
-  #   build: .
-  #   container_name: admissao_hk
-  #   restart: unless-stopped
-  #   command: bash -c "sleep 150 && python main.py"
-  #   env_file: ./envs/hk.env
-  #   volumes:
-  #     - ./admissao_hk:/app
-  #     - ./shared:/shared:ro
-  #     - ./credentials.json:/app/credentials.json:ro
-  #   environment:
-  #     GOOGLE_APPLICATION_CREDENTIALS: /app/credentials.json
-  #   labels:
-  #     ofelia.enabled: "true"
-  #     ofelia.job-exec.admissao_hk.schedule: "@every 30m"
-  #     ofelia.job-exec.admissao_hk.command: "python main.py"
+  admissao_hk:
+    <<: [*job-base, *hk-env]
+    container_name: admissao_hk
+    working_dir: /app
+    volumes:
+      - ./admissao_hk:/app
+      - ./shared:/shared:ro
+      - ./credentials.json:/app/credentials.json:ro
+    labels:
+      ofelia.enabled: "true"
+      ofelia.job-exec.admissao_hk.schedule: "@every 30m"
+      ofelia.job-exec.admissao_hk.command: "python main.py"
 
-  # colaboradores_hk:
-  #   build: .
-  #   container_name: colaboradores_hk
-  #   restart: unless-stopped
-  #   command: bash -c "sleep 180 && python main.py"
-  #   env_file: ./envs/hk.env
-  #   volumes:
-  #     - ./colaboradores_hk:/app
-  #     - ./shared:/shared:ro
-  #     - ./credentials.json:/app/credentials.json:ro
-  #   environment:
-  #     GOOGLE_APPLICATION_CREDENTIALS: /app/credentials.json
-  #   labels:
-  #     ofelia.enabled: "true"
-  #     ofelia.job-exec.colaboradores_hk.schedule: "@every 30m"
-  #     ofelia.job-exec.colaboradores_hk.command: "python main.py"
+  colaboradores_hk:
+    <<: [*job-base, *hk-env]
+    container_name: colaboradores_hk
+    working_dir: /app
+    volumes:
+      - ./colaboradores_hk:/app
+      - ./shared:/shared:ro
+      - ./credentials.json:/app/credentials.json:ro
+    labels:
+      ofelia.enabled: "true"
+      ofelia.job-exec.colaboradores_hk.schedule: "@every 30m"
+      ofelia.job-exec.colaboradores_hk.command: "python main.py"
 
-  # beneficios:
-  #   build: .
-  #   container_name: beneficios
-  #   restart: unless-stopped
-  #   command: bash -c "sleep 210 && python main.py"
-  #   env_file: ./envs/hk.env
-  #   volumes:
-  #     - ./beneficios:/app
-  #     - ./shared:/shared:ro
-  #     - ./credentials.json:/app/credentials.json:ro
-  #   environment:
-  #     GOOGLE_APPLICATION_CREDENTIALS: /app/credentials.json
-  #   labels:
-  #     ofelia.enabled: "true"
-  #     ofelia.job-exec.beneficios.schedule: "@every 1h"
-  #     ofelia.job-exec.beneficios.command: "python main.py"
+  beneficios:
+    <<: [*job-base, *hk-env]
+    container_name: beneficios
+    working_dir: /app
+    volumes:
+      - ./beneficios:/app
+      - ./shared:/shared:ro
+      - ./credentials.json:/app/credentials.json:ro
+    labels:
+      ofelia.enabled: "true"
+      ofelia.job-exec.beneficios.schedule: "@every 1h"
+      ofelia.job-exec.beneficios.command: "python main.py"
 
-  # turnover_hk:
-  #   build: .
-  #   container_name: turnover_hk
-  #   restart: unless-stopped
-  #   command: bash -c "sleep 240 && python main.py"
-  #   env_file: ./envs/hk.env
-  #   volumes:
-  #     - ./turnover_hk:/app
-  #     - ./shared:/shared:ro
-  #     - ./credentials.json:/app/credentials.json:ro
-  #   environment:
-  #     GOOGLE_APPLICATION_CREDENTIALS: /app/credentials.json
-  #   labels:
-  #     ofelia.enabled: "true"
-  #     ofelia.job-exec.turnover_hk.schedule: "@every 1h"
-  #     ofelia.job-exec.turnover_hk.command: "python main.py"
+  turnover_hk:
+    <<: [*job-base, *hk-env]
+    container_name: turnover_hk
+    working_dir: /app
+    volumes:
+      - ./turnover_hk:/app
+      - ./shared:/shared:ro
+      - ./credentials.json:/app/credentials.json:ro
+    labels:
+      ofelia.enabled: "true"
+      ofelia.job-exec.turnover_hk.schedule: "@every 1h"
+      ofelia.job-exec.turnover_hk.command: "python main.py"
 
-  # juridico:
-  #   build: .
-  #   container_name: juridico
-  #   restart: unless-stopped
-  #   command: bash -c "sleep 270 && python main.py"
-  #   env_file: ./envs/hk.env
-  #   volumes:
-  #     - ./juridico:/app
-  #     - ./shared:/shared:ro
-  #     - ./credentials.json:/app/credentials.json:ro
-  #   environment:
-  #     GOOGLE_APPLICATION_CREDENTIALS: /app/credentials.json
-  #   labels:
-  #     ofelia.enabled: "true"
-  #     ofelia.job-exec.juridico.schedule: "@every 1h"
-  #     ofelia.job-exec.juridico.command: "python main.py"
+  juridico:
+    <<: [*job-base, *hk-env]
+    container_name: juridico
+    working_dir: /app
+    volumes:
+      - ./juridico:/app
+      - ./shared:/shared:ro
+      - ./credentials.json:/app/credentials.json:ro
+    labels:
+      ofelia.enabled: "true"
+      ofelia.job-exec.juridico.schedule: "@every 1h"
+      ofelia.job-exec.juridico.command: "python main.py"
 
-  # sesmt_hk:
-  #   build: .
-  #   container_name: sesmt_hk
-  #   restart: unless-stopped
-  #   command: bash -c "sleep 300 && python main.py"
-  #   env_file: ./envs/hk.env
-  #   volumes:
-  #     - ./sesmt_hk:/app
-  #     - ./shared:/shared:ro
-  #     - ./credentials.json:/app/credentials.json:ro
-  #   environment:
-  #     GOOGLE_APPLICATION_CREDENTIALS: /app/credentials.json
-  #   labels:
-  #     ofelia.enabled: "true"
-  #     ofelia.job-exec.sesmt_hk.schedule: "@every 1h"
-  #     ofelia.job-exec.sesmt_hk.command: "python main.py"
+  sesmt_hk:
+    <<: [*job-base, *hk-env]
+    container_name: sesmt_hk
+    working_dir: /app
+    volumes:
+      - ./sesmt_hk:/app
+      - ./shared:/shared:ro
+      - ./credentials.json:/app/credentials.json:ro
+    labels:
+      ofelia.enabled: "true"
+      ofelia.job-exec.sesmt_hk.schedule: "@every 1h"
+      ofelia.job-exec.sesmt_hk.command: "python main.py"
 
-  # faltas_tt:
-  #   build: .
-  #   container_name: faltas_tt
-  #   restart: unless-stopped
-  #   command: bash -c "sleep 330 && python main.py"
-  #   env_file: ./envs/hk.env
-  #   volumes:
-  #     - ./faltas_tt:/app
-  #     - ./shared:/shared:ro
-  #     - ./credentials.json:/app/credentials.json:ro
-  #   environment:
-  #     GOOGLE_APPLICATION_CREDENTIALS: /app/credentials.json
-  #   labels:
-  #     ofelia.enabled: "true"
-  #     ofelia.job-exec.faltas_tt.schedule: "@every 30m"
-  #     ofelia.job-exec.faltas_tt.command: "python main.py"
+  faltas_tt:
+    <<: [*job-base, *hk-env]
+    container_name: faltas_tt
+    working_dir: /app
+    volumes:
+      - ./faltas_tt:/app
+      - ./shared:/shared:ro
+      - ./credentials.json:/app/credentials.json:ro
+    labels:
+      ofelia.enabled: "true"
+      ofelia.job-exec.faltas_tt.schedule: "@every 30m"
+      ofelia.job-exec.faltas_tt.command: "python main.py"
 
-  # excedente:
-  #   build: .
-  #   container_name: excedente
-  #   restart: unless-stopped
-  #   command: bash -c "sleep 360 && python main.py"
-  #   env_file: ./envs/hk.env
-  #   volumes:
-  #     - ./excedente:/app
-  #     - ./shared:/shared:ro
-  #     - ./credentials.json:/app/credentials.json:ro
-  #   environment:
-  #     GOOGLE_APPLICATION_CREDENTIALS: /app/credentials.json
-  #   labels:
-  #     ofelia.enabled: "true"
-  #     ofelia.job-exec.excedente.schedule: "@every 1h"
-  #     ofelia.job-exec.excedente.command: "python main.py"
+  excedente:
+    <<: [*job-base, *hk-env]
+    container_name: excedente
+    working_dir: /app
+    volumes:
+      - ./excedente:/app
+      - ./shared:/shared:ro
+      - ./credentials.json:/app/credentials.json:ro
+    labels:
+      ofelia.enabled: "true"
+      ofelia.job-exec.excedente.schedule: "@every 1h"
+      ofelia.job-exec.excedente.command: "python main.py"
 
-  # descobertos:
-  #   build: .
-  #   container_name: descobertos
-  #   restart: unless-stopped
-  #   command: bash -c "sleep 390 && python main.py"
-  #   env_file: ./envs/hk.env
-  #   volumes:
-  #     - ./descobertos:/app
-  #     - ./shared:/shared:ro
-  #     - ./credentials.json:/app/credentials.json:ro
-  #   environment:
-  #     GOOGLE_APPLICATION_CREDENTIALS: /app/credentials.json
-  #   labels:
-  #     ofelia.enabled: "true"
-  #     ofelia.job-exec.descobertos.schedule: "@every 30m"
-  #     ofelia.job-exec.descobertos.command: "python main.py"
+  descobertos:
+    <<: [*job-base, *hk-env]
+    container_name: descobertos
+    working_dir: /app
+    volumes:
+      - ./descobertos:/app
+      - ./shared:/shared:ro
+      - ./credentials.json:/app/credentials.json:ro
+    labels:
+      ofelia.enabled: "true"
+      ofelia.job-exec.descobertos.schedule: "@every 30m"
+      ofelia.job-exec.descobertos.command: "python main.py"
 
-  # sobra:
-  #   build: .
-  #   container_name: sobra
-  #   restart: unless-stopped
-  #   command: bash -c "sleep 420 && python main.py"
-  #   env_file: ./envs/hk.env
-  #   volumes:
-  #     - ./sobra:/app
-  #     - ./shared:/shared:ro
-  #     - ./credentials.json:/app/credentials.json:ro
-  #   environment:
-  #     GOOGLE_APPLICATION_CREDENTIALS: /app/credentials.json
-  #   labels:
-  #     ofelia.enabled: "true"
-  #     ofelia.job-exec.sobra.schedule: "@every 1h"
-  #     ofelia.job-exec.sobra.command: "python main.py"
+  sobra:
+    <<: [*job-base, *hk-env]
+    container_name: sobra
+    working_dir: /app
+    volumes:
+      - ./sobra:/app
+      - ./shared:/shared:ro
+      - ./credentials.json:/app/credentials.json:ro
+    labels:
+      ofelia.enabled: "true"
+      ofelia.job-exec.sobra.schedule: "@every 1h"
+      ofelia.job-exec.sobra.command: "python main.py"
 
   treinamento:
-    build: .
+    <<: [*job-base, *hk-env]
     container_name: treinamento
-    restart: unless-stopped
-    command: bash -c "sleep 450 && python main.py"
-    env_file: ./envs/hk.env
+    working_dir: /app
     volumes:
       - ./treinamento:/app
       - ./shared:/shared:ro
       - ./credentials.json:/app/credentials.json:ro
-    environment:
-      GOOGLE_APPLICATION_CREDENTIALS: /app/credentials.json
     labels:
       ofelia.enabled: "true"
       ofelia.job-exec.treinamento.schedule: "@every 30m"
       ofelia.job-exec.treinamento.command: "python main.py"
 
-  # exportar_faltas_hk:
-  #   build: .
-  #   container_name: exportar_faltas_hk
-  #   restart: unless-stopped
-  #   command: bash -c "sleep 480 && python main.py"
-  #   env_file: ./envs/hk.env
-  #   volumes:
-  #     - ./exportar_faltas_hk:/app
-  #     - ./shared:/shared:ro
-  #     - ./credentials.json:/app/credentials.json:ro
-  #   environment:
-  #     GOOGLE_APPLICATION_CREDENTIALS: /app/credentials.json
-  #   labels:
-  #     ofelia.enabled: "true"
-  #     ofelia.job-exec.exportar_faltas_hk.schedule: "@every 10m"
-  #     ofelia.job-exec.exportar_faltas_hk.command: "python main.py"
+  exportar_faltas_hk:
+    <<: [*job-base, *hk-env]
+    container_name: exportar_faltas_hk
+    working_dir: /app
+    volumes:
+      - ./exportar_faltas_hk:/app
+      - ./shared:/shared:ro
+      - ./credentials.json:/app/credentials.json:ro
+    labels:
+      ofelia.enabled: "true"
+      ofelia.job-exec.exportar_faltas_hk.schedule: "@every 10m"
+      ofelia.job-exec.exportar_faltas_hk.command: "python main.py"
 
-  # sesmt:
-  #   build: .
-  #   container_name: sesmt
-  #   restart: unless-stopped
-  #   command: bash -c "sleep 510 && python main.py"
-  #   env_file: ./envs/hk.env
-  #   volumes:
-  #     - ./sesmt:/app
-  #     - ./shared:/shared:ro
-  #     - ./credentials.json:/app/credentials.json:ro
-  #   environment:
-  #     GOOGLE_APPLICATION_CREDENTIALS: /app/credentials.json
-  #   labels:
-  #     ofelia.enabled: "true"
-  #     ofelia.job-exec.sesmt.schedule: "@every 1h"
-  #     ofelia.job-exec.sesmt.command: "python main.py"
-
-  # turnover:
-  #   build: .
-  #   container_name: turnover
-  #   restart: unless-stopped
-  #   command: bash -c "sleep 540 && python main.py"
-  #   env_file: ./envs/hk.env
-  #   volumes:
-  #     - ./turnover:/app
-  #     - ./shared:/shared:ro
-  #     - ./credentials.json:/app/credentials.json:ro
-  #   environment:
-  #     GOOGLE_APPLICATION_CREDENTIALS: /app/credentials.json
-  #   labels:
-  #     ofelia.enabled: "true"
-  #     ofelia.job-exec.turnover.schedule: "@every 1h"
-  #     ofelia.job-exec.turnover.command: "python main.py"
+  turnover:
+    <<: [*job-base, *hk-env]
+    container_name: turnover
+    working_dir: /app
+    volumes:
+      - ./turnover:/app
+      - ./shared:/shared:ro
+      - ./credentials.json:/app/credentials.json:ro
+    labels:
+      ofelia.enabled: "true"
+      ofelia.job-exec.turnover.schedule: "@every 1h"
+      ofelia.job-exec.turnover.command: "python main.py"
